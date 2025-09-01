@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Tags HTML</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        h1, h2 {
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        blockquote {
+            border-left: 4px solid #ccc;
+            padding-left: 15px;
+            margin-left: 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Guia Rápido de Tags HTML</h1>
+    <p>Esta página serve como um guia de referência para algumas tags HTML essenciais e de formatação de texto.</p>
+
+    <hr>
+
+    <h2>Títulos: &lt;h1&gt; até &lt;h6&gt;</h2>
+    <p>As tags de <code>&lt;h1&gt;</code> a <code>&lt;h6&gt;</code> são usadas para definir títulos e subtítulos em uma página. A tag <code>&lt;h1&gt;</code> representa o título mais importante e a <code>&lt;h6&gt;</code>, o de menor importância.</p>
+    <h1>Este é um Título 1</h1>
+    <h2>Este é um Título 2</h2>
+    <h3>Este é um Título 3</h3>
+    <h4>Este é um Título 4</h4>
+    <h5>Este é um Título 5</h5>
+    <h6>Este é um Título 6</h6>
+
+    <hr>
+
+    <h2>Parágrafo: &lt;p&gt;</h2>
+    <p>A tag <code>&lt;p&gt;</code> é usada para definir um parágrafo de texto. Navegadores automaticamente adicionam um espaço antes e depois de cada elemento <code>&lt;p&gt;</code>.</p>
+    <p>Este é um exemplo de um parágrafo. Ele agrupa sentenças relacionadas, facilitando a leitura do conteúdo.</p>
+
+    <hr>
+
+    <h2>Formatação de Texto</h2>
+
+    <p><strong>Ênfase Forte: &lt;strong&gt;</strong></p>
+    <p>A tag <code>&lt;strong&gt;</code> é usada para dar ênfase forte a um texto, que geralmente é exibido em <strong>negrito</strong> pelos navegadores.</p>
+
+    <p><strong>Itálico: &lt;i&gt;</strong></p>
+    <p>A tag <code>&lt;i&gt;</code> é usada para colocar uma parte do texto em <i>itálico</i>. Geralmente utilizada para termos técnicos, nomes de navios, etc.</p>
+
+    <p><strong>Sublinhado: &lt;u&gt;</strong></p>
+    <p>A tag <code>&lt;u&gt;</code> renderiza o texto <u>sublinhado</u>. Seu uso deve ser cuidadoso para não ser confundido com um link.</p>
+
+    <p><strong>Texto Marcado: &lt;mark&gt;</strong></p>
+    <p>A tag <code>&lt;mark&gt;</code> é usada para <mark>destacar ou marcar</mark> uma parte do texto para referência.</p>
+
+    <p><strong>Texto Pequeno: &lt;small&gt;</strong></p>
+    <p>A tag <code>&lt;small&gt;</code> define um texto menor, como <small>direitos autorais ou notas de rodapé.</small></p>
+
+    <p><strong>Texto Deletado: &lt;del&gt;</strong></p>
+    <p>A tag <code>&lt;del&gt;</code> é usada para representar um texto que foi <del>removido</del> de um documento.</p>
+
+    <p><strong>Subscrito e Sobrescrito: &lt;sub&gt; e &lt;sup&gt;</strong></p>
+    <p>A tag <code>&lt;sub&gt;</code> define um texto subscrito, como em H<sub>2</sub>O. A tag <code>&lt;sup&gt;</code> define um texto sobrescrito, como em X<sup>2</sup>.</p>
+    
+    <p><strong>Fonte (Obsoleta): &lt;font&gt;</strong></p>
+    <p>A tag <code>&lt;font&gt;</code> era usada para definir o tamanho, a cor e a fonte do texto. <font color="red" size="4">Exemplo.</font> <strong>Atenção:</strong> Esta tag é obsoleta em HTML5 e seu uso não é recomendado. A estilização deve ser feita com CSS.</p>
+
+    <hr>
+
+    <h2>Listas</h2>
+
+    <p><strong>Lista Ordenada: &lt;ol&gt; e &lt;li&gt;</strong></p>
+    <p>A tag <code>&lt;ol&gt;</code> define uma lista ordenada (numerada). Cada item da lista é definido pela tag <code>&lt;li&gt;</code>.</p>
+    <ol>
+        <li>Primeiro item</li>
+        <li>Segundo item</li>
+        <li>Terceiro item</li>
+    </ol>
+
+    <p><strong>Lista Não Ordenada: &lt;ul&gt; e &lt;li&gt;</strong></p>
+    <p>A tag <code>&lt;ul&gt;</code> define uma lista não ordenada (com marcadores). Cada item da lista também é definido pela tag <code>&lt;li&gt;</code>.</p>
+    <ul>
+        <li>Item com marcador</li>
+        <li>Outro item com marcador</li>
+        <li>Mais um item</li>
+    </ul>
+
+    <hr>
+
+    <h2>Outras Tags Importantes</h2>
+
+    <p><strong>Link (Âncora): &lt;a&gt;</strong></p>
+    <p>A tag <code>&lt;a&gt;</code> define um hyperlink, que é usado para ligar uma página a outra. O atributo <code>href</code> especifica a URL de destino.</p>
+    <p><a href="https://www.google.com" target="_blank">Este é um link para o Google.</a></p>
+
+    <p><strong>Linha Horizontal: &lt;hr&gt;</strong></p>
+    <p>A tag <code>&lt;hr&gt;</code> é usada para criar uma quebra temática no conteúdo, geralmente exibida como uma linha horizontal.</p>
+
+    <p><strong>Citação em Bloco: &lt;blockquote&gt;</strong></p>
+    <p>A tag <code>&lt;blockquote&gt;</code> especifica uma seção que é citada de outra fonte.</p>
+    <blockquote>
+        "Esta é uma citação. Navegadores geralmente indentam este elemento para destacá-lo do resto do texto."
+    </blockquote>
+
+    <p><strong>Abreviação: &lt;abbr&gt;</strong></p>
+    <p>A tag <code>&lt;abbr&gt;</code> é usada para definir uma abreviação ou um acrônimo. O atributo <code>title</code> pode ser usado para mostrar o significado completo ao passar o mouse sobre o elemento.</p>
+    <p>A <abbr title="Organização das Nações Unidas">ONU</abbr> foi fundada em 1945.</p>
+
+</body>
+</html>
