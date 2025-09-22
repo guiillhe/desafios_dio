@@ -1,0 +1,6 @@
+[action]
+create intial seeds with tcg pokemon cards
+[context]
+generate sql inserts 
+[information]
+with my sql generatade before
