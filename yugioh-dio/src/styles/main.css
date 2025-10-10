@@ -1,0 +1,148 @@
+body{
+    cursor: url(../assets/cursor/yugicursor.png), default;
+}
+
+button,
+a,
+img:hover,
+button:hover,
+a:hover {
+    cursor: url(../assets/cursor/yamiyugicursorGLOW.png), auto;
+
+}
+.bg-video{
+    position: absolute;
+    z-index: -2;
+    width: 100%;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: right;
+}
+
+.bg-video .video {
+    height: 100vh;
+}
+
+.bg-video::after{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.1)0%,
+        rgba(0, 0, 0, 0.8)50%,
+        rgba(0, 0, 0, 0.1)100%
+         );
+}
+
+.container{
+    position: relative;
+    z-index: 3;
+    display: flex;
+    height: 100vh;    
+}
+
+.container__left{
+    width: 35%;
+    min-width: 35px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.score_box{
+    background: #FFFF;
+    padding: 1.5rem;
+}
+
+.frame {
+    border:3px solid #000;
+    border-radius: 5px;
+
+}
+
+.card_details{
+    background: #FFFF;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 6rem;
+    width: 100%;
+}
+
+#card-name{
+    font-size: 0.8rem;
+    
+}
+#card-type{
+    font-size: 1rem;
+}
+
+.container__right {
+    width: 65%;    
+}
+
+.card-box__container{
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0.3rem;
+
+}
+
+.card-versus{        
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    padding-top: 0.3rem;
+    height: 300px;
+}
+
+.versus-top,
+.versus-bottom{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.versus-bottom{
+    margin: 1rem 0;
+}
+
+#next-duel{
+    display: none;
+    margin: 0 auto; /* Center the button horizontally */
+}
+
+.card-box{
+    height: 10rem;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.card-infield{
+    height: 11.2rem;
+    width: 8rem;    
+    border-radius: 8px;
+}
+
+.card{
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: scale(1.25);
+
+}
