@@ -1,0 +1,3 @@
+### Desafio HTML
+
+O material apresentado é um guia conciso sobre as tags HTML fundamentais para a criação de conteúdo na web. Ele explica como usar tags para definir a estrutura e a hierarquia de uma página com títulos e parágrafos, como aplicar formatação e significado semântico ao texto utilizando elementos para negrito, itálico, marcação e abreviações, e também como organizar informações através de listas ordenadas e não ordenadas. Por fim, destaca a importância da tag âncora (<a>) para a criação de hyperlinks, o elemento central que conecta as páginas na internet.

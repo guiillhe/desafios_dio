@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engenharia de Software Ágil - Wikipedia Melhorada</title>
+    <meta name="description" content="Artigo completo sobre metodologias ágeis, Scrum, Kanban e práticas modernas de desenvolvimento de software.">
+    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <!-- Preload para performance -->
+    <link rel="preload" href="assets/css/style.css" as="style">
+    <link rel="preload" href="assets/images/logo.png" as="image">
+</head>
+<body>
+    <!-- Skip link para acessibilidade -->
+    <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
+
+    <!-- Header com navegação principal -->
+    <header role="banner" class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="assets/images/logo.png" 
+                     alt="Wikipedia - A enciclopédia livre" 
+                     width="200" 
+                     height="auto"/>
+            </div>
+            
+            <!-- Navegação principal -->
+            <nav role="navigation" aria-label="Navegação principal" class="main-nav">
+                <ul>
+                    <li><a href="#" aria-current="page">Artigo</a></li>
+                    <li><a href="#">Discussão</a></li>
+                    <li><a href="#">Histórico</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Barra de separação visual -->
+    <div class="bar" role="presentation" aria-hidden="true"></div>
+
+    <!-- Container principal -->
+    <div class="content-wrapper">
+        <!-- Sidebar com navegação secundária -->
+        <aside role="complementary" class="sidebar" aria-label="Navegação lateral">
+            <nav aria-label="Menu lateral">
+                <h2>Navegação</h2>
+                <ul role="list">
+                    <li><a href="#introducao">Introdução</a></li>
+                    <li><a href="#metodologias">Metodologias Ágeis</a></li>
+                    <li><a href="#scrum">Scrum Framework</a></li>
+                    <li><a href="#kanban">Kanban</a></li>
+                    <li><a href="#xp">Extreme Programming</a></li>
+                    <li><a href="#devops">DevOps</a></li>
+                    <li><a href="#ferramentas">Ferramentas</a></li>
+                    <li><a href="#referencias">Referências</a></li>
+                </ul>
+            </nav>
+
+            <!-- Caixa de informações -->
+            <section class="info-box" aria-labelledby="info-title">
+                <h3 id="info-title">Engenharia de Software Ágil</h3>
+                <dl>
+                    <dt>Criado em:</dt>
+                    <dd>2001 (Manifesto Ágil)</dd>
+                    
+                    <dt>Principais frameworks:</dt>
+                    <dd>Scrum, Kanban, XP</dd>
+                    
+                    <dt>Foco:</dt>
+                    <dd>Entrega contínua de valor</dd>
+                </dl>
+            </section>
+        </aside>
+
+        <!-- Conteúdo principal -->
+        <main role="main" id="main-content" class="main-content">
+            <article>
+                <!-- Cabeçalho do artigo -->
+                <header class="article-header">
+                    <h1>Engenharia de Software Ágil</h1>
+                    <p class="article-subtitle">Metodologias modernas para desenvolvimento eficiente</p>
+                </header>
+
+                <!-- Introdução -->
+                <section id="introducao" aria-labelledby="intro-heading">
+                    <h2 id="intro-heading">Introdução</h2>
+                    <p>A <strong>Engenharia de Software Ágil</strong> representa uma abordagem revolucionária no desenvolvimento de software, focada na <em>entrega contínua de valor</em>, <em>colaboração efetiva</em> e <em>adaptabilidade às mudanças</em>.</p>
+                    
+                    <p>Surgida como resposta às limitações dos métodos tradicionais de desenvolvimento, as metodologias ágeis priorizam:</p>
+                    <ul>
+                        <li><strong>Indivíduos e interações</strong> mais que processos e ferramentas</li>
+                        <li><strong>Software funcionando</strong> mais que documentação abrangente</li>
+                        <li><strong>Colaboração com o cliente</strong> mais que negociação de contratos</li>
+                        <li><strong>Responder a mudanças</strong> mais que seguir um plano</li>
+                    </ul>
+                </section>
+
+                <!-- Metodologias Ágeis -->
+                <section id="metodologias" aria-labelledby="metodologias-heading">
+                    <h2 id="metodologias-heading">Principais Metodologias Ágeis</h2>
+                    
+                    <div class="methodology-grid">
+                        <article class="methodology-card">
+                            <h3 id="scrum">Scrum Framework</h3>
+                            <p>Framework ágil mais popular, baseado em <strong>sprints</strong>, <strong>papéis definidos</strong> e <strong>cerimônias estruturadas</strong>.</p>
+                            
+                            <h4>Papéis no Scrum:</h4>
+                            <dl>
+                                <dt>Product Owner (PO)</dt>
+                                <dd>Responsável pela visão do produto e priorização do backlog</dd>
+                                
+                                <dt>Scrum Master</dt>
+                                <dd>Facilitador do processo e removedor de impedimentos</dd>
+                                
+                                <dt>Development Team</dt>
+                                <dd>Equipe multifuncional responsável pela entrega</dd>
+                            </dl>
+
+                            <h4>Cerimônias Scrum:</h4>
+                            <ul>
+                                <li><strong>Sprint Planning:</strong> Planejamento da iteração</li>
+                                <li><strong>Daily Scrum:</strong> Sincronização diária da equipe</li>
+                                <li><strong>Sprint Review:</strong> Demonstração do incremento</li>
+                                <li><strong>Sprint Retrospective:</strong> Melhoria contínua do processo</li>
+                            </ul>
+                        </article>
+
+                        <article class="methodology-card">
+                            <h3 id="kanban">Kanban</h3>
+                            <p>Sistema visual de gestão de fluxo de trabalho baseado em <strong>cartões</strong> e <strong>colunas</strong> que representam estados do processo.</p>
+                            
+                            <h4>Princípios do Kanban:</h4>
+                            <ol>
+                                <li><strong>Visualizar o trabalho:</strong> Tornar o fluxo visível</li>
+                                <li><strong>Limitar WIP:</strong> Controlar trabalho em progresso</li>
+                                <li><strong>Gerenciar fluxo:</strong> Otimizar a entrega</li>
+                                <li><strong>Tornar políticas explícitas:</strong> Definir regras claras</li>
+                                <li><strong>Implementar loops de feedback:</strong> Melhoria contínua</li>
+                                <li><strong>Melhorar colaborativamente:</strong> Evolução experimental</li>
+                            </ol>
+                        </article>
+
+                        <article class="methodology-card">
+                            <h3 id="xp">Extreme Programming (XP)</h3>
+                            <p>Metodologia focada em <strong>práticas técnicas</strong> e <strong>qualidade de código</strong>.</p>
+                            
+                            <h4>Práticas XP:</h4>
+                            <ul>
+                                <li><strong>Test-Driven Development (TDD)</strong></li>
+                                <li><strong>Pair Programming</strong></li>
+                                <li><strong>Continuous Integration</strong></li>
+                                <li><strong>Refactoring</strong></li>
+                                <li><strong>Simple Design</strong></li>
+                                <li><strong>Collective Code Ownership</strong></li>
+                            </ul>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- DevOps Integration -->
+                <section id="devops" aria-labelledby="devops-heading">
+                    <h2 id="devops-heading">Integração com DevOps</h2>
+                    <p>A <strong>cultura DevOps</strong> complementa as metodologias ágeis, estendendo a colaboração para além do desenvolvimento:</p>
+                    
+                    <figure>
+                        <blockquote cite="https://devops.com">
+                            "DevOps é uma cultura, movimento ou prática que enfatiza a colaboração e comunicação entre desenvolvedores de software e outros profissionais de TI."
+                        </blockquote>
+                        <figcaption>— Definição amplamente aceita na comunidade DevOps</figcaption>
+                    </figure>
+
+                    <h3>Pipeline CI/CD</h3>
+                    <p>A implementação de <strong>Continuous Integration/Continuous Deployment</strong> é fundamental:</p>
+                    <ol>
+                        <li><strong>Source Control:</strong> Versionamento de código</li>
+                        <li><strong>Build Automation:</strong> Compilação automatizada</li>
+                        <li><strong>Automated Testing:</strong> Testes automatizados</li>
+                        <li><strong>Deployment Automation:</strong> Deploy automatizado</li>
+                        <li><strong>Monitoring:</strong> Monitoramento contínuo</li>
+                    </ol>
+                </section>
+
+                <!-- Ferramentas -->
+                <section id="ferramentas" aria-labelledby="ferramentas-heading">
+                    <h2 id="ferramentas-heading">Ferramentas Essenciais</h2>
+                    
+                    <div class="tools-grid">
+                        <div class="tool-category">
+                            <h3>Gestão de Projetos</h3>
+                            <ul>
+                                <li><strong>Jira:</strong> Tracking de issues e sprints</li>
+                                <li><strong>Azure DevOps:</strong> Suite completa Microsoft</li>
+                                <li><strong>Trello:</strong> Kanban boards simples</li>
+                                <li><strong>Monday.com:</strong> Gestão visual de projetos</li>
+                            </ul>
+                        </div>
+
+                        <div class="tool-category">
+                            <h3>Versionamento</h3>
+                            <ul>
+                                <li><strong>Git:</strong> Sistema distribuído</li>
+                                <li><strong>GitHub:</strong> Plataforma de colaboração</li>
+                                <li><strong>GitLab:</strong> DevOps platform</li>
+                                <li><strong>Bitbucket:</strong> Integração Atlassian</li>
+                            </ul>
+                        </div>
+
+                        <div class="tool-category">
+                            <h3>CI/CD</h3>
+                            <ul>
+                                <li><strong>Jenkins:</strong> Automation server</li>
+                                <li><strong>GitHub Actions:</strong> Workflows integrados</li>
+                                <li><strong>Azure Pipelines:</strong> Cloud CI/CD</li>
+                                <li><strong>CircleCI:</strong> Continuous integration</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Métricas e KPIs -->
+                <section id="metricas" aria-labelledby="metricas-heading">
+                    <h2 id="metricas-heading">Métricas e KPIs Ágeis</h2>
+                    
+                    <table class="metrics-table" role="table" aria-label="Métricas ágeis importantes">
+                        <caption>Principais métricas para acompanhamento ágil</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Métrica</th>
+                                <th scope="col">Descrição</th>
+                                <th scope="col">Frequência</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Velocity</th>
+                                <td>Quantidade de story points entregues por sprint</td>
+                                <td>Por sprint</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Burndown Chart</th>
+                                <td>Progresso do trabalho restante ao longo do tempo</td>
+                                <td>Diário</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Lead Time</th>
+                                <td>Tempo desde a criação até a entrega de uma funcionalidade</td>
+                                <td>Por item</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Cycle Time</th>
+                                <td>Tempo de desenvolvimento ativo de uma funcionalidade</td>
+                                <td>Por item</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Referências -->
+                <section id="referencias" aria-labelledby="referencias-heading">
+                    <h2 id="referencias-heading">Referências</h2>
+                    <ol class="references-list">
+                        <li>Beck, K. et al. (2001). <cite>Manifesto for Agile Software Development</cite>. Agile Alliance.</li>
+                        <li>Schwaber, K. & Sutherland, J. (2020). <cite>The Scrum Guide</cite>. Scrum.org.</li>
+                        <li>Anderson, D. J. (2010). <cite>Kanban: Successful Evolutionary Change for Your Technology Business</cite>. Blue Hole Press.</li>
+                        <li>Beck, K. (2004). <cite>Extreme Programming Explained: Embrace Change</cite>. Addison-Wesley.</li>
+                    </ol>
+                </section>
+            </article>
+        </main>
+
+        <!-- Índice lateral -->
+        <aside role="complementary" class="anchors" aria-label="Índice do artigo">
+            <nav aria-label="Neste artigo">
+                <h2>Neste Artigo</h2>
+                <ol role="list">
+                    <li><a href="#introducao">Introdução</a></li>
+                    <li><a href="#metodologias">Metodologias Ágeis</a>
+                        <ol>
+                            <li><a href="#scrum">Scrum Framework</a></li>
+                            <li><a href="#kanban">Kanban</a></li>
+                            <li><a href="#xp">Extreme Programming</a></li>
+                        </ol>
+                    </li>
+                    <li><a href="#devops">DevOps Integration</a></li>
+                    <li><a href="#ferramentas">Ferramentas</a></li>
+                    <li><a href="#metricas">Métricas e KPIs</a></li>
+                    <li><a href="#referencias">Referências</a></li>
+                </ol>
+            </nav>
+
+            <!-- Widget de progresso de leitura -->
+            <div class="reading-progress" aria-label="Progresso de leitura">
+                <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-fill"></div>
+                </div>
+                <span class="progress-text">0% lido</span>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer role="contentinfo" class="site-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Wikipedia</h3>
+                <ul>
+                    <li><a href="#">Sobre a Wikipedia</a></li>
+                    <li><a href="#">Política de privacidade</a></li>
+                    <li><a href="#">Termos de uso</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Contribuir</h3>
+                <ul>
+                    <li><a href="#">Como editar</a></li>
+                    <li><a href="#">Páginas especiais</a></li>
+                    <li><a href="#">Doações</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Ferramentas</h3>
+                <ul>
+                    <li><a href="#">Páginas afluentes</a></li>
+                    <li><a href="#">Mudanças relacionadas</a></li>
+                    <li><a href="#">Informações da página</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2024 Wikipedia. Todo o texto está disponível sob a <a href="#">Licença Creative Commons</a>.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts para funcionalidades avançadas -->
+    <script src="assets/js/accessibility.js"></script>
+    <script src="assets/js/reading-progress.js"></script>
+</body>
+</html>

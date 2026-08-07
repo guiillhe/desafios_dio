@@ -1,0 +1,29 @@
+[acao]
+create a script to create a database for trading card game cards, in postgree sql
+[context]
+-the first table is a table to save a pokemon tcg cards
+- the secnd table is a table is a table to save collection set
+
+connect the two tables using a foreign key relationship
+
+
+[informação]
+first table: tbl_cards
+-id
+-hp
+-name
+- stage
+- type stage
+-informaçãoatttack
+-damage
+-weak
+-ressis
+-retreat
+- cardNumberInCollection
+
+
+second table: tbl_collections
+-id
+-coolectionSetName
+-releasedata
+-totalCardsInCollection
