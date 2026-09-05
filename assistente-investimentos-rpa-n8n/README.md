@@ -17,7 +17,7 @@ Desenvolver um pipeline de automação que:
 3. **Cruza perfis de investidor** com uma base de opções de investimento
 4. **Gera mensagens personalizadas** para cada cliente
 
-Ao final, você terá um sistema funcional que demonstra como empresas do setor financeiro podem automatizar a comunicação com clientes de forma inteligente.
+
 
 ## Arquitetura do Projeto
 
@@ -124,17 +124,18 @@ Conecte o Agente de IA do N8N a um modelo como Gemini ou GPT para:
 
 ### MVP (Mínimo Viável)
 
-- [ ] Repositório forkado com o workflow N8N implementado
-- [ ] Workflow N8N exportado (`n8n/workflow.json`) com mensagens estáticas
-- [ ] Script de RPA integrado ao Webhook do N8N
-- [ ] Print ou vídeo demonstrando o fluxo funcionando de ponta a ponta
+- [x] Repositório forkado com o workflow N8N implementado
+- [x] Workflow N8N exportado (`n8n/workflow.json`) com mensagens estáticas
+- [x] Script de RPA integrado ao Webhook do N8N
+- [x] Print ou vídeo demonstrando o fluxo funcionando de ponta a ponta
+![print_automacao](docs/n8n.png)
 
 ### Desafio Completo
 
-- [ ] Todos os itens do MVP
-- [ ] Integração com Agente de IA no N8N
-- [ ] Mensagens geradas dinamicamente via LLM
-- [ ] Documentação explicando as decisões técnicas
+- [x] Todos os itens do MVP
+- [x] Integração com Agente de IA no N8N
+- [x] Mensagens geradas dinamicamente via LLM
+- [x] Documentação explicando as decisões técnicas
 
 ## Estrutura do Repositório
 
