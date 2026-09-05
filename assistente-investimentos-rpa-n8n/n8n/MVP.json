@@ -1,0 +1,303 @@
+{
+  "name": "My workflow 5",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clientes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8dea0b49-1096-451d-a80d-c472d5dc31c2",
+      "name": "Webhook",
+      "webhookId": "2f3e2505-b019-4d68-963a-a42e0e60e620"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1456,
+        -144
+      ],
+      "id": "d5be3bc8-b6b3-44cb-80eb-cb3657745606",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "url": "https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/data.csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        0
+      ],
+      "id": "bb96d7d9-3c29-491a-9d57-2683b70c9e87",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node do n8n — converte o CSV embutido em itens estruturados\nconst csv = $json.data; // campo \"data\" do payload recebido\n\nconst linhas = csv.split('\\n').filter(linha => linha.trim() !== '');\nconst [cabecalho, ...dados] = linhas;\nconst colunas = cabecalho.split(',');\n\nconst registros = dados.map(linha => {\n  const valores = linha.split(',');\n  const obj = {};\n  colunas.forEach((coluna, i) => {\n    obj[coluna.trim()] = (valores[i] ?? '').trim();\n  });\n  return obj;\n});\nlet investimentos = registros.map(registro => (registro));\nreturn {investimentos}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        0
+      ],
+      "id": "2c8a765e-36e1-4201-9d5b-f5ab1ada2f3e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        752,
+        -288
+      ],
+      "id": "4af413cb-5eef-4d57-bb6f-0226af46f53b",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node do n8n — recomendação de investimento + mensagem aleatória\n\n// 1) Normaliza \"R$ 12.500,00\" -> 12500\nconst parseSaldo = (valor) => {\n  if (typeof valor !== 'string') return Number(valor) || 0;\n  return Number(valor.replace(/[^\\d,]/g, '').replace(/\\./g, '').replace(',', '.')) || 0;\n};\n\n// 2) Score de rentabilidade para ordenar as opções (\"Variável\" fica por último)\nconst scoreRentabilidade = (rent) => {\n  if (typeof rent !== 'string') return -1;\n  const match = rent.match(/(\\d+(?:[.,]\\d+)?)/);\n  let score = match ? parseFloat(match[1].replace(',', '.')) : -1;\n  if (rent.includes('IPCA+')) score += 5; // bônus por retorno real (IPCA + 6%)\n  return score;\n};\n\n// 3) Templates de mensagem (4 variações, sorteadas por cliente)\nconst templates = [\n  (c, r) => `Olá, ${c.nome}! Com base no seu perfil ${c.perfil}, recomendamos o ${r.produto} (rentabilidade de ${r.rentabilidade}). É uma ótima oportunidade para o seu momento. Quer conversar com um especialista?`,\n  (c, r) => `${c.nome}, pensando no seu objetivo de investimento, o ${r.produto} se destaca com ${r.rentabilidade}. Seu saldo atual permite começar hoje mesmo. Posso te ajudar com isso?`,\n  (c, r) => `Oi, ${c.nome}! Para o seu perfil ${c.perfil}, o ${r.produto} é uma excelente escolha (${r.rentabilidade}). Vamos agendar uma conversa para detalhar?`,\n  (c, r) => `${c.nome}, uma oportunidade para você: ${r.produto} com rentabilidade de ${r.rentabilidade}. Perfeito para o perfil ${c.perfil}. Responda se quiser saber mais!`\n];\n\nconst clientes = $json.body?.clientes ?? $json.clientes ?? [];\nconst investimentos = $json.investimentos ?? [];\n\nreturn clientes.map(cliente => {\n  const saldo = parseSaldo(cliente.saldo);\n  const doPerfil = investimentos.filter(inv => inv.perfil === cliente.perfil);\n\n  // Só produtos cujo ticket mínimo o saldo do cliente cobre, ordenados por rentabilidade\n  const elegiveis = doPerfil\n    .map(inv => ({ ...inv, minimoNum: Number(inv.minimo) || 0 }))\n    .filter(inv => saldo >= inv.minimoNum)\n    .sort((a, b) => scoreRentabilidade(b.rentabilidade) - scoreRentabilidade(a.rentabilidade));\n\n  // Fallback: se nada couber no saldo, recomenda a opção de menor aporte do perfil\n  const recomendacao = elegiveis[0] ??\n    [...doPerfil].sort((a, b) => (Number(a.minimo) || 0) - (Number(b.minimo) || 0))[0] ??\n    { produto: 'Produto não disponível', minimo: '-', rentabilidade: '-' };\n\n  const mensagem = templates[Math.floor(Math.random() * templates.length)](cliente, recomendacao);\n\n  return {\n    json: {\n      nome: cliente.nome,\n      email: cliente.email,\n      perfil: cliente.perfil,\n      saldo: cliente.saldo,\n      saldoNum: saldo,\n      produto: recomendacao.produto,\n      minimo: recomendacao.minimo,\n      rentabilidade: recomendacao.rentabilidade,\n      elegivel: elegiveis.length > 0,\n      mensagem\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -160
+      ],
+      "id": "3c529752-6232-4d18-8728-a5632e519e5c",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "32e9ce3b-39c8-440b-a6d6-544405aedc4c",
+              "name": "body.clientes",
+              "value": "={{ $json.body.clientes }}",
+              "type": "array"
+            },
+            {
+              "id": "51812eb1-5f95-4af9-994e-9c05bea0190e",
+              "name": "investimentos",
+              "value": "={{ $json.investimentos }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        960,
+        -288
+      ],
+      "id": "00afbd41-2953-4c7d-8477-28d560dd3dc8",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "automacao.rparaujo.com.br",
+            "user-agent": "python-requests/2.32.4",
+            "content-length": "1047",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "content-type": "application/json",
+            "x-forwarded-for": "34.106.188.215",
+            "x-forwarded-host": "automacao.rparaujo.com.br",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "744b8765d16e",
+            "x-real-ip": "34.106.188.215"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "clientes": [
+              {
+                "nome": "Ana Silva",
+                "email": "ana@email.com",
+                "saldo": "R$ 12.500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Bruno Lima",
+                "email": "bruno@email.com",
+                "saldo": "R$ 3.200,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Carla Souza",
+                "email": "carla@email.com",
+                "saldo": "R$ 28.900,00",
+                "perfil": "Arrojado"
+              },
+              {
+                "nome": "Daniel Oliveira",
+                "email": "daniel@email.com",
+                "saldo": "R$ 850,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Elena Rodrigues",
+                "email": "elena@email.com",
+                "saldo": "R$ 45.000,00",
+                "perfil": "Arrojado"
+              },
+              {
+                "nome": "Felipe Santos",
+                "email": "felipe@email.com",
+                "saldo": "R$ 7.800,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Gabriela Costa",
+                "email": "gabriela@email.com",
+                "saldo": "R$ 1.500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Henrique Alves",
+                "email": "henrique@email.com",
+                "saldo": "R$ 22.300,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Isabela Martins",
+                "email": "isabela@email.com",
+                "saldo": "R$ 500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "João Pereira",
+                "email": "joao@email.com",
+                "saldo": "R$ 15.000,00",
+                "perfil": "Arrojado"
+              }
+            ]
+          },
+          "webhookUrl": "https://automacao.rparaujo.com.br/webhook-test/clientes",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f324e27e-2e90-4fc6-95ed-beb1709034f7",
+  "meta": {
+    "instanceId": "d2aa77f7c99dcc763f8a3e79bd7d64206b05b8ebf2f92b50e7932aed4fde32f7"
+  },
+  "nodeGroups": [],
+  "id": "y6e8A6cw6GgBUPHi",
+  "tags": []
+}

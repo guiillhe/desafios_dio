@@ -1,0 +1,719 @@
+{
+  "name": "My workflow 5",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clientes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8dea0b49-1096-451d-a80d-c472d5dc31c2",
+      "name": "Webhook",
+      "webhookId": "2f3e2505-b019-4d68-963a-a42e0e60e620"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2112,
+        -16
+      ],
+      "id": "d5be3bc8-b6b3-44cb-80eb-cb3657745606",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "url": "https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/data.csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        0
+      ],
+      "id": "bb96d7d9-3c29-491a-9d57-2683b70c9e87",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node do n8n — converte o CSV embutido em itens estruturados\nconst csv = $json.data; // campo \"data\" do payload recebido\n\nconst linhas = csv.split('\\n').filter(linha => linha.trim() !== '');\nconst [cabecalho, ...dados] = linhas;\nconst colunas = cabecalho.split(',');\n\nconst registros = dados.map(linha => {\n  const valores = linha.split(',');\n  const obj = {};\n  colunas.forEach((coluna, i) => {\n    obj[coluna.trim()] = (valores[i] ?? '').trim();\n  });\n  return obj;\n});\nlet investimentos = registros.map(registro => (registro));\nreturn {investimentos}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        0
+      ],
+      "id": "2c8a765e-36e1-4201-9d5b-f5ab1ada2f3e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        752,
+        -288
+      ],
+      "id": "4af413cb-5eef-4d57-bb6f-0226af46f53b",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node do n8n — recomendação de investimento + mensagem aleatória\n\n// 1) Normaliza \"R$ 12.500,00\" -> 12500\nconst parseSaldo = (valor) => {\n  if (typeof valor !== 'string') return Number(valor) || 0;\n  return Number(valor.replace(/[^\\d,]/g, '').replace(/\\./g, '').replace(',', '.')) || 0;\n};\n\n// 2) Score de rentabilidade para ordenar as opções (\"Variável\" fica por último)\nconst scoreRentabilidade = (rent) => {\n  if (typeof rent !== 'string') return -1;\n  const match = rent.match(/(\\d+(?:[.,]\\d+)?)/);\n  let score = match ? parseFloat(match[1].replace(',', '.')) : -1;\n  if (rent.includes('IPCA+')) score += 5; // bônus por retorno real (IPCA + 6%)\n  return score;\n};\n\n// 3) Templates de mensagem (4 variações, sorteadas por cliente)\nconst templates = [\n  (c, r) => `Olá, ${c.nome}! Com base no seu perfil ${c.perfil}, recomendamos o ${r.produto} (rentabilidade de ${r.rentabilidade}). É uma ótima oportunidade para o seu momento. Quer conversar com um especialista?`,\n  (c, r) => `${c.nome}, pensando no seu objetivo de investimento, o ${r.produto} se destaca com ${r.rentabilidade}. Seu saldo atual permite começar hoje mesmo. Posso te ajudar com isso?`,\n  (c, r) => `Oi, ${c.nome}! Para o seu perfil ${c.perfil}, o ${r.produto} é uma excelente escolha (${r.rentabilidade}). Vamos agendar uma conversa para detalhar?`,\n  (c, r) => `${c.nome}, uma oportunidade para você: ${r.produto} com rentabilidade de ${r.rentabilidade}. Perfeito para o perfil ${c.perfil}. Responda se quiser saber mais!`\n];\n\nconst clientes = $json.body?.clientes ?? $json.clientes ?? [];\nconst investimentos = $json.investimentos ?? [];\n\nreturn clientes.map(cliente => {\n  const saldo = parseSaldo(cliente.saldo);\n  const doPerfil = investimentos.filter(inv => inv.perfil === cliente.perfil);\n\n  // Só produtos cujo ticket mínimo o saldo do cliente cobre, ordenados por rentabilidade\n  const elegiveis = doPerfil\n    .map(inv => ({ ...inv, minimoNum: Number(inv.minimo) || 0 }))\n    .filter(inv => saldo >= inv.minimoNum)\n    .sort((a, b) => scoreRentabilidade(b.rentabilidade) - scoreRentabilidade(a.rentabilidade));\n\n  // Fallback: se nada couber no saldo, recomenda a opção de menor aporte do perfil\n  const recomendacao = elegiveis[0] ??\n    [...doPerfil].sort((a, b) => (Number(a.minimo) || 0) - (Number(b.minimo) || 0))[0] ??\n    { produto: 'Produto não disponível', minimo: '-', rentabilidade: '-' };\n\n  const mensagem = templates[Math.floor(Math.random() * templates.length)](cliente, recomendacao);\n\n  return {\n    json: {\n      nome: cliente.nome,\n      email: cliente.email,\n      perfil: cliente.perfil,\n      saldo: cliente.saldo,\n      saldoNum: saldo,\n      produto: recomendacao.produto,\n      minimo: recomendacao.minimo,\n      rentabilidade: recomendacao.rentabilidade,\n      elegivel: elegiveis.length > 0,\n      mensagem\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -16
+      ],
+      "id": "3c529752-6232-4d18-8728-a5632e519e5c",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "32e9ce3b-39c8-440b-a6d6-544405aedc4c",
+              "name": "body.clientes",
+              "value": "={{ $json.body.clientes }}",
+              "type": "array"
+            },
+            {
+              "id": "51812eb1-5f95-4af9-994e-9c05bea0190e",
+              "name": "investimentos",
+              "value": "={{ $json.investimentos }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        960,
+        -288
+      ],
+      "id": "00afbd41-2953-4c7d-8477-28d560dd3dc8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-lite-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-lite-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=com o papel de um consultor de investimentos ativado, escreva um email. em pt-br, para o cliente abaixo, sem promessas de ganhos, ou qualquer outra coisa fora da legalidade no Brasil\ncliente \nnome:{{ $json.nome }}\nperfil: {{ $json.perfil }}\nsaldo: {{ $json.saldoNum }}\nrecomendação: {{ $json.produto }}\nminimo: {{ $json.minimo }}\nrentabilidade: {{ $json.rentabilidade }}\nretorne apenas JSON com: \n{\n\"email\":{{ $json.email }}\n\"subject\":\"***\n\"text_body\":\"***\"\n\"html_body\":\"***\"\n} "
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1328,
+        -16
+      ],
+      "id": "4d0bbfd7-aa93-4e09-95df-908dd0e8cd5d",
+      "name": "Message a model",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TRVAw3TGc5nXqFGC",
+          "name": "guiti"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1888,
+        -16
+      ],
+      "id": "63f05b23-d154-4103-8ab5-081d6448717f",
+      "name": "Send a message",
+      "webhookId": "19a59f23-dfc0-4b0b-bbc5-07e64cde8da0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GEdIg3TcAoNsKvPJ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node do n8n — normaliza a resposta da IA para { email, subject, text_body, html_body }\n// Sem alterar o conteúdo gerado pela IA (nenhum trim/reescrita nos valores)\n\n// 1) Remove cercas markdown\n//json  e texto ao redor\nconst extrairJson = (texto) => {\n  let t = (texto ?? '').replace(/^(?:json)?\\s*/i, '').replace(/\\s*$/, '');\n  const inicio = t.indexOf('{');\n  const fim = t.lastIndexOf('}');\n  try {\n    return JSON.parse(t.slice(inicio, fim + 1));\n  } catch (e) {\n    return null;\n  }\n};\n\n// 2) Recupera o texto bruto de qualquer formato de chegada e extrai o JSON\nconst normalizarFonte = (fonte) => {\n  if (Array.isArray(fonte)) return fonte.flatMap(normalizarFonte);\n  if (typeof fonte === 'string') {\n    const parsed = extrairJson(fonte);\n    return parsed ? [parsed] : [];\n  }\n  if (fonte && typeof fonte === 'object') {\n    // Estrutura do anexo: { content: { parts: [{ text: \"...\" }] } }\n    if (fonte.content?.parts?.[0]?.text) return normalizarFonte(fonte.content.parts[0].text);\n    if (typeof fonte.text === 'string') return normalizarFonte(fonte.text);\n    // Saídas comuns de nós de IA: output / message.content\n    if (fonte.output !== undefined) return normalizarFonte(fonte.output);\n    if (typeof fonte.message?.content === 'string') return normalizarFonte(fonte.message.content);\n    // Já veio normalizado\n    if (fonte.email !== undefined) return [fonte];\n  }\n  return [];\n};\n\n// 3) Extrai os 4 campos exatamente como a IA escreveu\nconst saida = [];\nfor (const item of items) {\n  for (const emailObj of normalizarFonte(item.json)) {\n    saida.push({\n      json: {\n        email: emailObj.email,\n        subject: emailObj.subject,\n        text_body: emailObj.text_body,\n        html_body: emailObj.html_body\n      }\n    });\n  }\n}\n\nreturn saida;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        -16
+      ],
+      "id": "fd1e378a-781f-44ee-8f94-bf3e9ae82428",
+      "name": "Code in JavaScript2"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "automacao.rparaujo.com.br",
+            "user-agent": "python-requests/2.32.4",
+            "content-length": "1047",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "content-type": "application/json",
+            "x-forwarded-for": "34.106.188.215",
+            "x-forwarded-host": "automacao.rparaujo.com.br",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "744b8765d16e",
+            "x-real-ip": "34.106.188.215"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "clientes": [
+              {
+                "nome": "Ana Silva",
+                "email": "ana@email.com",
+                "saldo": "R$ 12.500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Bruno Lima",
+                "email": "bruno@email.com",
+                "saldo": "R$ 3.200,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Carla Souza",
+                "email": "carla@email.com",
+                "saldo": "R$ 28.900,00",
+                "perfil": "Arrojado"
+              },
+              {
+                "nome": "Daniel Oliveira",
+                "email": "daniel@email.com",
+                "saldo": "R$ 850,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Elena Rodrigues",
+                "email": "elena@email.com",
+                "saldo": "R$ 45.000,00",
+                "perfil": "Arrojado"
+              },
+              {
+                "nome": "Felipe Santos",
+                "email": "felipe@email.com",
+                "saldo": "R$ 7.800,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Gabriela Costa",
+                "email": "gabriela@email.com",
+                "saldo": "R$ 1.500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Henrique Alves",
+                "email": "henrique@email.com",
+                "saldo": "R$ 22.300,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Isabela Martins",
+                "email": "isabela@email.com",
+                "saldo": "R$ 500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "João Pereira",
+                "email": "joao@email.com",
+                "saldo": "R$ 15.000,00",
+                "perfil": "Arrojado"
+              }
+            ]
+          },
+          "webhookUrl": "https://automacao.rparaujo.com.br/webhook-test/clientes",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Edit Fields": [
+      {
+        "json": {
+          "body": {
+            "clientes": [
+              {
+                "nome": "Ana Silva",
+                "email": "ana@email.com",
+                "saldo": "R$ 12.500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Bruno Lima",
+                "email": "bruno@email.com",
+                "saldo": "R$ 3.200,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Carla Souza",
+                "email": "carla@email.com",
+                "saldo": "R$ 28.900,00",
+                "perfil": "Arrojado"
+              },
+              {
+                "nome": "Daniel Oliveira",
+                "email": "daniel@email.com",
+                "saldo": "R$ 850,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Elena Rodrigues",
+                "email": "elena@email.com",
+                "saldo": "R$ 45.000,00",
+                "perfil": "Arrojado"
+              },
+              {
+                "nome": "Felipe Santos",
+                "email": "felipe@email.com",
+                "saldo": "R$ 7.800,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Gabriela Costa",
+                "email": "gabriela@email.com",
+                "saldo": "R$ 1.500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Henrique Alves",
+                "email": "henrique@email.com",
+                "saldo": "R$ 22.300,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Isabela Martins",
+                "email": "isabela@email.com",
+                "saldo": "R$ 500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "João Pereira",
+                "email": "joao@email.com",
+                "saldo": "R$ 15.000,00",
+                "perfil": "Arrojado"
+              }
+            ]
+          },
+          "investimentos": [
+            {
+              "perfil": "Conservador",
+              "produto": "Poupança",
+              "minimo": "100",
+              "rentabilidade": "6.2%"
+            },
+            {
+              "perfil": "Conservador",
+              "produto": "CDB Liquidez Diária",
+              "minimo": "1000",
+              "rentabilidade": "12.5%"
+            },
+            {
+              "perfil": "Conservador",
+              "produto": "Tesouro Selic",
+              "minimo": "500",
+              "rentabilidade": "13.0%"
+            },
+            {
+              "perfil": "Moderado",
+              "produto": "CDB Prefixado",
+              "minimo": "1000",
+              "rentabilidade": "14.0%"
+            },
+            {
+              "perfil": "Moderado",
+              "produto": "Fundo Multimercado",
+              "minimo": "5000",
+              "rentabilidade": "16.0%"
+            },
+            {
+              "perfil": "Moderado",
+              "produto": "Tesouro IPCA+",
+              "minimo": "1000",
+              "rentabilidade": "IPCA+6.0%"
+            },
+            {
+              "perfil": "Arrojado",
+              "produto": "Ações ETF",
+              "minimo": "500",
+              "rentabilidade": "Variável"
+            },
+            {
+              "perfil": "Arrojado",
+              "produto": "Fundo de Ações",
+              "minimo": "10000",
+              "rentabilidade": "Variável"
+            },
+            {
+              "perfil": "Arrojado",
+              "produto": "Criptomoedas",
+              "minimo": "100",
+              "rentabilidade": "Variável"
+            }
+          ]
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Message a model": [
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n\"email\": \"ana@email.com\",\n\"subject\": \"Planejamento e Otimização da sua Reserva Financeira\",\n\"text_body\": \"Olá, Ana Silva,\\n\\nEspero que este e-mail a encontre bem.\\n\\nComo sua consultora de investimentos, estou sempre avaliando alternativas para que seu capital esteja alinhado ao seu perfil Conservador, prezando pela segurança e liquidez.\\n\\nAnalisando o seu saldo atual de R$ 12.500, identificamos uma excelente oportunidade no Tesouro Selic. Esta aplicação possui investimento mínimo de R$ 500, o que se adequa perfeitamente ao seu planejamento.\\n\\nHistoricamente e com base nas taxas atuais, o Tesouro Selic apresenta uma rentabilidade anual de referência em torno de 13,0%, sendo ideal para a formação ou manutenção de reserva de emergência, pois oferece alta segurança (garantida pelo Tesouro Nacional) e possibilidade de resgate a qualquer momento, sem comprometer seus objetivos.\\n\\nRessalto que investimentos em renda fixa seguem as regras de mercado e a taxa mencionada é uma referência atual, não constituindo promessa ou garantia de rentabilidade futura.\\n\\nFico à disposição para esclarecer qualquer dúvida e auxiliá-la a dar o próximo passo com total tranquilidade.\\n\\nAtenciosamente,\\nSeu Consultor de Investimentos\",\n\"html_body\": \"<p>Olá, <strong>Ana Silva</strong>,</p><p>Espero que este e-mail a encontre bem.</p><p>Como sua consultora de investimentos, estou sempre avaliando alternativas para que seu capital esteja alinhado ao seu perfil <strong>Conservador</strong>, prezando essencialmente pela segurança e previsibilidade.</p><p>Analisando o seu saldo atual de <strong>R$ 12.500</strong>, identificamos que o <strong>Tesouro Selic</strong> é a opção mais adequada para o seu momento financeiro. Vale destacar que o valor mínimo para aplicação é de apenas <strong>R$ 500</strong>.</p><p>Atualmente, este título apresenta uma taxa de rentabilidade de referência de <strong>13,0%</strong> ao ano. Ele é amplamente recomendado para reservas de emergência devido à sua alta segurança, por ser emitido pelo Tesouro Nacional, e por permitir resgates com facilidade.</p><p><em>Aviso Legal: Destacamos que rentabilidades passadas ou taxas atuais não são garantia de rentabilidade futura. Investimentos envolvem variáveis econômicas e esta mensagem tem caráter estritamente consultivo e informativo.</em></p><p>Fico à disposição para conversarmos e auxiliá-la na alocação dos seus recursos.</p><p>Atenciosamente,<br><strong>Seu Consultor de Investimentos</strong></p>\"\n}",
+                "thoughtSignature": "El4KXAERTTIPAsGcVuicHwQj3GAE0+TomgSGwuyu+c+kJzRQH9QTZ7P/wegeeBKGKMae0NWBFITVCh9qhY1aN/CI1YtjeSLvfC9+/rvrm346t0dsibKpp1ofxdgbIgfP"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "```json\n{\n\"email\": \"bruno@email.com\",\n\"subject\": \"Oportunidade de Investimento: Alinhamento ao seu Perfil Moderado\",\n\"text_body\": \"Olá, Bruno,\\n\\nTudo bem?\\n\\nComo seu consultor de investimentos, estou sempre em busca de alternativas que respeitem o seu perfil moderado e seus objetivos financeiros.\\n\\nIdentifiquei uma oportunidade interessante que se encaixa no seu planejamento: um CDB Prefixado com rentabilidade de 14,0% ao a.a. O valor mínimo de aplicação é de R$ 1.000,00, o que se adequa perfeitamente ao seu saldo atual de R$ 3.200,00.\\n\\nLembro que investimentos em CDB contam com a garantia do FGC (Fundo Garantidor de Créditos) até o limite legal, oferecendo a previsibilidade de taxa fixa que o seu perfil busca, sem comprometer a sua liquidez planejada.\\n\\nO investimento em renda fixa envolve riscos de mercado e de crédito da instituição emissora, e rentabilidades passadas não garantem retornos futuros. Estou à disposição para conversarmos e avaliarmos juntos se faz sentido para o seu momento.\\n\\nUm abraço,\\nSeu Consultor de Investimentos\",\n\"html_body\": \"<p>Olá, <strong>Bruno</strong>,</p><p>Tudo bem?</p><p>Como seu consultor de investimentos, estou sempre em busca de alternativas que respeitem o seu perfil moderado e seus objetivos financeiros.</p><p>Identifiquei uma oportunidade interessante que se encaixa no seu planejamento: um <strong>CDB Prefixado</strong> com rentabilidade de <strong>14,0% ao a.a.</strong> O valor mínimo de aplicação é de R$ 1.000,00, o que se adequa perfeitamente ao seu saldo atual de R$ 3.200,00.</p><p>Lembro que investimentos em CDB contam com a garantia do FGC (Fundo Garantidor de Créditos) até o limite legal, oferecendo a previsibilidade de taxa fixa que o seu perfil busca.</p><p><small><em>Aviso Legal: Investimentos em renda fixa envolvem riscos. Rentabilidade passada não é garantia de rentabilidade futura.</em></small></p><p>Estou à disposição para conversarmos e avaliarmos juntos se faz sentido para o seu momento.</p><p>Um abraço,<br><strong>Seu Consultor de Investimentos</strong></p>\"\n}\n```",
+                "thoughtSignature": "El4KXAERTTIPnR/43yExSulkCUTywKUEm01GqBzmkfYhETopwRgRE1yrKWQAHeuQSXQ3lVdd17tUFnUQVa5xbmokojY0Z1wUzBCfePTXfkcDIGh/yi4M4nWYjrGt2EjN"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n\"email\": \"carla@email.com\",\n\"subject\": \"Oportunidade de alocação em Ações (ETF) para o seu perfil\",\n\"text_body\": \"Prezada Carla Souza,\\n\\nEspero que este e-mail a encontre bem.\\n\\nComo sua consultora de investimentos, analisei o seu perfil arrojado e identificamos uma excelente oportunidade de diversificação alinhada aos seus objetivos.\\n\\nConsiderando o seu saldo atual de R$ 28.900, recomendamos a classe de ativos de Ações via ETFs (Exchange Traded Funds). Os ETFs são fundos de índice negociados em bolsa que permitem investir em uma cesta diversificada de ações de forma prática e eficiente.\\n\\nPrincipais características da recomendação:\\n- Aplicação mínima: R$ 500,00\\n- Rentabilidade: Variável (atrelada ao desempenho do índice de referência escolhido, sujeita às flutuações e aos riscos inerentes à renda variável).\\n\\nRessaltamos que investimentos em renda variável possuem volatilidade e retornos passados não garantem rentabilidade futura. Toda alocação deve estar em linha com a sua tolerância ao risco.\\n\\nEstou à disposição para conversarmos e ajustarmos os detalhes dessa operação.\\n\\nAtenciosamente,\\nSeu Consultor de Investimentos\",\n\"html_body\": \"<p>Prezada Carla Souza,</p><p>Espero que este e-mail a encontre bem.</p><p>Como seu consultor de investimentos, analisei o seu perfil arrojado e identificamos uma excelente oportunidade de diversificação alinhada aos seus objetivos.</p><p>Considerando o seu saldo atual de <strong>R$ 28.900,00</strong>, recomendamos a classe de ativos de <strong>Ações via ETFs (Exchange Traded Funds)</strong>. Os ETFs são fundos de índice negociados em bolsa que permitem investir em uma cesta diversificada de ações de forma prática e eficiente.</p><p><strong>Principais características da recomendação:</strong><br><ul><li>Aplicação mínima: R$ 500,00</li><li>Rentabilidade: Variável (atrelada ao desempenho do índice de referência escolhido, sujeita às flutuações e aos riscos inerentes à renda variável).</li></ul></p><p><em>Ressaltamos que investimentos em renda variável possuem volatilidade e retornos passados não garantem rentabilidade futura. Toda alocação deve estar em linha com a sua tolerância ao risco.</em></p><p>Estou à disposição para conversarmos e ajustarmos os detalhes dessa operação.</p><p>Atenciosamente,<br><strong>Seu Consultor de Investimentos</strong></p>\"\n}",
+                "thoughtSignature": "El4KXAERTTIPFFxRVb9DL7tWW1XnGeOCIQp5w1/au657y2cz9ud5xaZHyXkfkuMNibTaO8s8Jp6F+DH/RhlIrBu7+9p1vTxMPt7QL5ztKWxirCO6DMx68msnCeoZnWtX"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n\"email\":\"daniel@email.com\",\n\"subject\":\"Oportunidade para o seu capital: Segurança e Liquidez com o Tesouro Selic\",\n\"text_body\":\"Olá, Daniel,\\n\\nTudo bem?\\n\\nComo seu consultor de investimentos, estou sempre avaliando as melhores alternativas alinhadas ao seu perfil conservador. Analisando o seu saldo atual de R$ 850,00, identifiquei uma excelente oportunidade para otimizar seus recursos com total segurança.\\n\\nA minha recomendação para o seu momento é o Tesouro Selic. O valor mínimo de aplicação neste título é de R$ 500,00, o que se encaixa perfeitamente no seu montante disponível.\\n\\nAtualmente, a rentabilidade esperada para este ativo acompanha a taxa básica de juros da economia, estimada em torno de 13,0% ao ano. Vale ressaltar que investimentos em renda fixa possuem riscos reduzidos e contam com a garantia do Tesouro Nacional, ideal para a preservação de patrimônio e reserva de emergência, sem abrir mão da liquidez.\\n\\nEstou à disposição para conversarmos e realizarmos essa alocação juntos. \\n\\nAtenciosamente,\\nSeu Consultor de Investimentos\",\n\"html_body\":\"<p>Olá, Daniel,</p><p>Tudo bem?</p><p>Como seu consultor de investimentos, estou sempre avaliando as melhores alternativas alinhadas ao seu perfil conservador. Analisando o seu saldo atual de <strong>R$ 850,00</strong>, identifiquei uma excelente oportunidade para otimizar seus recursos com total segurança.</p><p>A minha recomendação para o seu momento é o <strong>Tesouro Selic</strong>. O valor mínimo de aplicação neste título é de R$ 500,00, o que se encaixa perfeitamente no seu montante disponível.</p><p>Atualmente, a rentabilidade esperada para este ativo acompanha a taxa básica de juros da economia, estimada em torno de <strong>13,0% ao ano</strong>. Vale ressaltar que investimentos em renda fixa possuem riscos reduzidos e contam com a garantia do Tesouro Nacional, ideal para a preservação de patrimônio e reserva de emergência, sem abrir mão da liquidez.</p><p>Estou à disposição para conversarmos e realizarmos essa alocação juntos.</p><p>Atenciosamente,<br><strong>Seu Consultor de Investimentos</strong></p>\"\n}",
+                "thoughtSignature": "El4KXAERTTIPPCLzpwn141EC6ue+id/EbEBz+Gg5N2jGDliwyMWnF+zSWUETEJM9oCWXKhYXjMhKpzwXvM7XC1kaDhL+x0/PcviegCBmtLANDGSqoElcmKsGwlcMrceg"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n\"email\": \"elena@email.com\",\n\"subject\": \"Estratégia de Investimentos: Oportunidades para o seu perfil arrojado\",\n\"text_body\": \"Olá, Elena Rodrigues,\\n\\nEspero que este e-mail a encontre bem.\\n\\nComo seu consultor de investimentos, analisei o seu perfil arrojado e o seu saldo atual de R$ 45.000,00. Tendo em vista a sua tolerância ao risco e objetivos de longo prazo, preparei uma recomendação alinhada ao seu perfil: alocação em ETFs (Exchange Traded Funds) de Ações.\\n\\nOs ETFs são fundos de índice negociados em bolsa que permitem diversificar a carteira de forma eficiente, acompanhando o desempenho de índices de mercado tanto nacionais quanto internacionais. Ressalto que, por se tratar de renda variável, os investimentos nesta classe possuem volatilidade e rentabilidade variável, não havendo garantias de retornos futuros ou preservação do capital investido.\\n\\nPara esta estratégia, o valor mínimo de aplicação é de R$ 500,00.\\n\\nLembro que toda decisão de investimento deve estar em linha com a sua <b><a href=\\\"https://www.anbima.com.br/\\\">suitability</a></b> e momento financeiro.\\n\\nEstou à disposição para conversarmos sobre os próximos passos e ajustarmos a carteira conforme a sua conveniência.\\n\\nAtenciosamente,\\nSeu Consultor de Investimentos\",\n\"html_body\": \"<p>Olá, <strong>Elena Rodrigues</strong>,</p><p>Espero que este e-mail a encontre bem.</p><p>Como seu consultor de investimentos, analisei o seu perfil arrojado e o seu saldo atual de <strong>R$ 45.000,00</strong>. Tendo em vista a sua tolerância ao risco e objetivos de longo prazo, preparei uma recomendação alinhada ao seu perfil: alocação em <strong>ETFs (Exchange Traded Funds) de Ações</strong>.</p><p>Os ETFs são fundos de índice negociados em bolsa que permitem diversificar a carteira de forma eficiente, acompanhando o desempenho de índices de mercado. Ressalto que, por se tratar de renda variável, os investimentos nesta classe possuem volatilidade e <strong>rentabilidade variável</strong>, não havendo garantias de retornos futuros ou de preservação do capital investido.</p><p>Para iniciar ou ajustar esta estratégia, o valor mínimo de aplicação é de <strong>R$ 500,00</strong>.</p><p>Reforço que toda decisão de investimento deve respeitar o seu perfil de investidor e seus objetivos de <b><a href=\\\"https://www.anbima.com.br/\\\">planejamento financeiro</a></b>.</p><p>Estou à total disposição para conversarmos sobre os próximos passos e estruturarmos essa alocação.</p><p>Atenciosamente,<br><strong>Seu Consultor de Investimentos</strong></p>\"\n}",
+                "thoughtSignature": "El4KXAERTTIP95ZpjT7q2vsHJoDKVidc59dzZGNbR7yHSgbZYJrVy3aiE0VVnXljvyr1pM9VEfgDNc81hQbBnksUH6idX6t1x0rDMhbF6e/YHD1ykJL6EiEZwOZNGYMX"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n\"email\": \"felipe@email.com\",\n\"subject\": \"Oportunidade de alinhamento para o seu perfil moderado\",\n\"text_body\": \"Olá, Felipe,\\n\\nEspero que este e-mail o encontre bem.\\n\\nComo seu consultor de investimentos, estou sempre em busca de alternativas que respeitem o seu perfil moderado e o seu horizonte de planejamento financeiro. Analisando o seu saldo atual de R$ 7.800, identifiquei uma oportunidade alinhada aos seus objetivos.\\n\\nTrata-se de um Fundo Multimercado cuja aplicação mínima é de R$ 5.000, o que se encaixa perfeitamente no seu montante disponível. É importante destacar que rentabilidades passadas não são garantia de retornos futuros, mas, a título de histórico e contextualização, este fundo apresentou uma rentabilidade de 16,0% em um período recente.\\n\\nEsta estratégia busca diversificação e flexibilidade, sempre respeitando os limites do seu perfil de risco, sem qualquer garantia de ganhos futuros, em conformidade com as normas da CVM.\\n\\nFico à disposição para conversarmos e avaliarmos se faz sentido para o seu momento.\\n\\nAtenciosamente,\\nSeu Consultor de Investimentos\",\n\"html_body\": \"<p>Olá, <strong>Felipe</strong>,</p><p>Espero que este e-mail o encontre bem.</p><p>Como seu consultor de investimentos, estou sempre em busca de alternativas que respeitem o seu perfil <strong>moderado</strong> e o seu horizonte de planejamento financeiro. Analisando o seu saldo atual de <strong>R$ 7.800</strong>, identifiquei uma oportunidade alinhada aos seus objetivos.</p><p>Trata-se de um <strong>Fundo Multimercado</strong> cuja aplicação mínima é de R$ 5.000, o que se encaixa perfeitamente no seu montante disponível. É importante destacar que rentabilidades passadas não são garantia de retornos futuros, mas, a título de histórico e contextualização, este fundo apresentou uma rentabilidade recente de <strong>16,0%</strong>.</p><p>Esta estratégia busca diversificação e flexibilidade, sempre respeitando os limites do seu perfil de risco, sem qualquer promessa ou garantia de ganhos futuros, em total conformidade com a regulamentação vigente no Brasil.</p><p>Fico à disposição para conversarmos e avaliarmos se faz sentido para o seu momento financeiro.</p><p>Atenciosamente,<br><strong>Seu Consultor de Investimentos</strong></p>\"\n}",
+                "thoughtSignature": "El4KXAERTTIPARYodbDJg8+mGmIIQ3VEdhgL171VSkYKa4Ugt3roApO4lzKggNKaREM/6DkD3irIwRa4L7SEw0F1VnLLiSeo78/5ThcNKXSVIeEY0TP2twsIKyBc6Daa"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 5
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n\"email\": \"gabriela@email.com\",\n\"subject\": \"Planejamento Financeiro: Oportunidade para o seu capital\",\n\"text_body\": \"Olá, Gabriela,\\n\\nEspero que este e-mail a encontre bem.\\n\\nComo sua consultora de investimentos, estou sempre analisando alternativas alinhadas ao seu perfil conservador, que prioriza a segurança e a previsibilidade para o seu patrimônio.\\n\\nAnalisando o seu saldo atual de R$ 1.500,00, identifiquei uma excelente oportunidade no Tesouro Selic. O valor mínimo de aplicação nesta opção é de R$ 500,00, o que se encaixa perfeitamente na sua realidade financeira atual.\\n\\nAtualmente, o Tesouro Selic apresenta uma rentabilidade anual de 13,0%, acompanhando a taxa básica de juros da economia. Vale ressaltar que rentabilidades passadas ou previstas não são garantia de rentabilidade futura, mas este é um título público federal considerado o investimento mais seguro do país, ideal para a formação ou manutenção da sua reserva de emergência.\\n\\nEstou à disposição para conversarmos sobre como dar esse passo com tranquilidade e organizar seus investimentos.\\n\\nAtenciosamente,\\nSua Consultora de Investimentos\",\n\"html_body\": \"<p>Olá, Gabriela,</p><p>Espero que este e-mail a encontre bem.</p><p>Como sua consultora de investimentos, estou sempre analisando alternativas alinhadas ao seu perfil conservador, que prioriza a segurança e a previsibilidade para o seu patrimônio.</p><p>Analisando o seu saldo atual de <strong>R$ 1.500,00</strong>, identifiquei uma excelente oportunidade no <strong>Tesouro Selic</strong>. O valor mínimo de aplicação nesta opção é de R$ 500,00, o que se encaixa perfeitamente na sua realidade financeira atual.</p><p>Atualmente, o Tesouro Selic apresenta uma rentabilidade indicativa de <strong>13,0% ao ano</strong>, acompanhando a taxa básica de juros da economia. <em>Vale ressaltar que rentabilidades passadas ou projeções não são garantia de retornos futuros</em>, mas este é um título público federal considerado o investimento de menor risco do mercado nacional, ideal para a sua reserva de emergência.</p><p>Estou à disposição para conversarmos sobre como dar esse passo com tranquilidade e organizar seus investimentos.</p><p>Atenciosamente,<br><strong>Sua Consultora de Investimentos</strong></p>\"\n}",
+                "thoughtSignature": "El4KXAERTTIPAgGbiiWwjq77q9X/cVdVIlr0j2Wu9lnoxGqCK08gGe4KrLK72IpnT9kGPjORS2nHfzyXU0eyRZO4qv0AnwVNm01UNcbwfFcAMVizNwh1wYmkbTV6GMSa"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 6
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "```json\n{\n\"email\":\"henrique@email.com\",\n\"subject\":\"Oportunidade de alocação para o seu perfil - [Nome da Corretora/Assessoria]\",\n\"text_body\":\"Olá, Henrique,\\n\\nEspero que esteja bem.\\n\\nAnalisando o seu perfil de investidor moderado e o seu saldo atual de R$ 22.300,00, identifiquei uma oportunidade alinhada aos seus objetivos de diversificação.\\n\\nTemos disponível em nossa plataforma uma opção de Fundo Multimercado, cujo valor mínimo de aplicação é de R$ 5.000,00. Vale ressaltar que rentabilidades passadas, como os 16,0% observados recentemente, não representam garantia de rentabilidade futura. Investimentos em fundos multimercados envolvem riscos e devem estar em linha com o seu horizonte de tempo e tolerância a oscilações.\\n\\nCaso tenha interesse em conhecer mais detalhes sobre a estratégia deste fundo e avaliar se faz sentido para a sua carteira, estou à disposição para conversarmos.\\n\\nAtenciosamente,\\n[Seu Nome]\\nConsultor de Investimentos\",\n\"html_body\":\"<p>Olá, Henrique,</p><p>Espero que esteja bem.</p><p>Analisando o seu perfil de investidor moderado e o seu saldo atual de R$ 22.300,00, identifiquei uma oportunidade alinhada aos seus objetivos de diversificação.</p><p>Temos disponível em nossa plataforma uma opção de <strong>Fundo Multimercado</strong>, cujo valor mínimo de aplicação é de R$ 5.000,00. Vale ressaltar que rentabilidades passadas, como os 16,0% observados recentemente, <em>não representam garantia de rentabilidade futura</em>. Investimentos em fundos multimercados envolvem riscos e devem estar em linha com o seu horizonte de tempo e tolerância a oscilações.</p><p>Caso tenha interesse em conhecer mais detalhes sobre a estratégia deste fundo e avaliar se faz sentido para a sua carteira, estou à disposição para conversarmos.</p><p>Atenciosamente,<br><strong>[Seu Nome]</strong><br>Consultor de Investimentos</p>\"\n}\n```",
+                "thoughtSignature": "El4KXAERTTIPydlsk37DD1TTspAEUdRWie92Lz4WrkfoElFEv8MQgKpm/HFRMTuj1tzJt0jn1Ymc+kLxlqvKAsPY3O7iYN1h4qS0tSH+pqEx0jbpSoby+OnzakuuiDb2"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 7
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n\"email\": \"isabela@email.com\",\n\"subject\": \"Planejamento Financeiro e Oportunidades para o seu Perfil\",\n\"text_body\": \"Prezada Isabela,\\n\\nEspero que este e-mail a encontre bem.\\n\\nComo seu consultor de investimentos, estou sempre avaliando alternativas que respeitem o seu perfil conservador, priorizando a segurança, a preservação de capital e a liquidez.\\n\\nConsiderando o valor disponível de R$ 500,00 para aplicação — que atende ao valor mínimo exigido para esta modalidade —, identifiquei o Tesouro Selic como uma excelente alternativa para o seu momento financeiro.\\n\\nO Tesouro Selic é um título público federal emitido pelo Tesouro Nacional, o que o torna um dos investimentos mais seguros do mercado brasileiro. Atualmente, ele apresenta uma taxa de rentabilidade anual de referência de 13,0%, estando diretamente atrelado à taxa básica de juros da economia (Selic). Vale destacar que rentabilidades passadas ou esperadas não garantem rentabilidades futuras, e o investimento conta com liquidez diária, permitindo o resgate a qualquer momento.\\n\\nEstou à disposição para esclarecer qualquer dúvida e auxiliá-la a dar este passo com total segurança e transparência.\\n\\nAtenciosamente,\\nSeu Consultor de Investimentos\",\n\"html_body\": \"<p>Prezada Isabela,</p><p>Espero que este e-mail a encontre bem.</p><p>Como seu consultor de investimentos, estou sempre avaliando alternativas que respeitem o seu perfil conservador, priorizando a segurança, a preservação de capital e a liquidez.</p><p>Considerando o valor disponível de R$ 500,00 para aplicação &mdash; que atende ao valor mínimo exigido para esta modalidade —, identifiquei o <strong>Tesouro Selic</strong> como uma excelente alternativa para o seu momento financeiro.</p><p>O Tesouro Selic é um título público federal emitido pelo Tesouro Nacional, o que o torna um dos investimentos mais seguros do mercado brasileiro. Atualmente, ele apresenta uma taxa de rentabilidade anual de referência de <strong>13,0%</strong>, estando diretamente atrelado à taxa básica de juros da economia (Selic). Vale destacar que rentabilidades passadas ou esperadas não garantem rentabilidades futuras, e o investimento conta com liquidez diária, permitindo o resgate a qualquer momento.</p><p>Estou à disposição para esclarecer qualquer dúvida e auxiliá-la a dar este passo com total segurança e transparência.</p><p>Atenciosamente,<br><strong>Seu Consultor de Investimentos</strong></p>\"\n}",
+                "thoughtSignature": "El4KXAERTTIPwYWzOGsWZh+tNY39T7vbwZglPpAM39/LgOzJoxzZKNiqd3tW+tPQ19H2VWlW9NViihisGvplyTuG7G+X84TWTSNRsu+904T8g8xqQPxdccb1DHQOIyB1"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 8
+        }
+      },
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n\"email\":\"joao@email.com\",\n\"subject\":\"Oportunidade para o seu perfil arrojado: Diversificação em ETFs\",\n\"text_body\":\"Olá, João Pereira,\\n\\nEspero que este e-mail o encontre bem.\\n\\nComo seu consultor de investimentos, estou sempre avaliando alternativas alinhadas ao seu perfil arrojado e aos seus objetivos financeiros. Considerando o seu saldo atual de R$ 15.000, preparei uma recomendação estratégica focada em eficiência e diversificação.\\n\\nA nossa sugestão para o momento é a alocação em ETFs (Exchange Traded Funds). Este tipo de ativo permite que você invista em uma cesta de ações de forma prática, diluindo riscos específicos de empresas e capturando o desempenho de mercados inteiros.\\n\\nDetalhes da recomendação:\\n- Produto: ETFs de Ações\\n- Aporte mínimo: R$ 500\\n- Rentabilidade: Variável (vinculada ao comportamento do mercado de renda variável, sem garantias de retornos futuros)\\n\\nRessalto que investimentos em renda variável envolvem riscos de flutuação de mercado e perdas, não havendo garantias de rentabilidade.\\n\\nEstou à disposição para conversarmos sobre como dar o próximo passo nessa estratégia.\\n\\nAtenciosamente,\\nSeu Consultor de Investimentos\",\n\"html_body\":\"<p>Olá, <strong>João Pereira</strong>,</p>\\n<p>Espero que este e-mail o encontre bem.</p>\\n<p>Como seu consultor de investimentos, estou sempre avaliando alternativas alinhadas ao seu perfil <strong>arrojado</strong> e aos seus objetivos financeiros. Considerando o seu saldo atual de R$ 15.000, preparei uma recomendação estratégica focada em eficiência e diversificação.</p>\\n<p>A nossa sugestão para o momento é a alocação em <strong>ETFs (Exchange Traded Funds)</strong>. Este tipo de ativo permite que você invista em uma cesta de ações de forma prática, diluindo riscos específicos de empresas e capturando o desempenho de mercados inteiros.</p>\\n<p><strong>Detalhes da recomendação:</strong></p>\\n<ul>\\n  <li><strong>Produto:</strong> ETFs de Ações</li>\\n  <li><strong>Aporte mínimo:</strong> R$ 500,00</li>\\n  <li><strong>Rentabilidade:</strong> Variável (vinculada ao comportamento do mercado de renda variável, sem garantias de retornos futuros)</li>\\n</ul>\\n<p><em>Ressalto que investimentos em renda variável envolvem riscos de flutuação de mercado e perdas, não havendo qualquer promessa ou garantia de rentabilidade.</em></p>\\n<p>Estou à disposição para conversarmos sobre como dar o próximo passo nessa estratégia.</p>\\n<p>Atenciosamente,<br><strong>Seu Consultor de Investimentos</strong></p>\"\n}",
+                "thoughtSignature": "El4KXAERTTIP30MCOgQsBl7Xids0Z6KHHCbhyJCytNMpecuMwCN0Vlt6PBQ28flGOV2iuKr6e0carLDBTnd3guhR+DewA2lxNUYNzz0RQZ7hNcEmAJhIUqDulDew6Sq/"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        },
+        "pairedItem": {
+          "item": 9
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "371b619b-0bc4-4a4c-bccf-33becf3a15ed",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d2aa77f7c99dcc763f8a3e79bd7d64206b05b8ebf2f92b50e7932aed4fde32f7"
+  },
+  "nodeGroups": [],
+  "id": "y6e8A6cw6GgBUPHi",
+  "tags": []
+}
