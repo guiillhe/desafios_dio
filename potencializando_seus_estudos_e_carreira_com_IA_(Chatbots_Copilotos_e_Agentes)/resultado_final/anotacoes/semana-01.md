@@ -8,7 +8,7 @@
 
 ## 🎯 Metas da Semana
 
-- [ ] Entender a tokenização e calcular custos de chamadas de API.
+- [x] Entender a tokenização e calcular custos de chamadas de API.
 - [ ] Construir e testar System Prompts com Few-Shot Learning.
 - [ ] Implementar Structured Outputs usando Pydantic e extrair dados em JSON válido.
 
@@ -17,7 +17,11 @@
 ## 💡 Conceitos-Chave Aprendidos
 
 ### 1. Tokens & Custos
-*Anote aqui suas reflexões sobre a diferença de preço entre Input e Output, limites de contexto, etc.*
+
+Conceito: 
+Tokenização nada mais é o processo de divisão do texto em linguagem natural para tokens, que é a linguagem que o modelo processa.
+Cada chamada para o modelo, gasta uma certa quantidade de tokens a depender de qual modelo é usado, geralmente calculado em milhoes clique [aqui](https://developers.openai.com/api/docs/pricing) para ver a documentação de preços da open ai.
+Tambem para dar uma reforçada no assunto eu fiz uns testes no [tokenizer](https://platform.openai.com/tokenizer), vale a pena clicar e t4estar alguns prompts ali para entender a importancia deles
 - 
 
 ### 2. Engenharia de Prompt
@@ -56,6 +60,7 @@ class DadosNotaFiscal(BaseModel):
 ## 🔗 Links & Referências Rápidas
 
 - [OpenAI Tokenizer](https://platform.openai.com/tokenizer)
+- [Tik Token](https://developers.openai.com/cookbook/examples/how_to_count_tokens_with_tiktoken) - Contador de tokens gastos por frase
 - Documentação do Pydantic
 
 ---
